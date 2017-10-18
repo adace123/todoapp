@@ -1,0 +1,79 @@
+<head>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>    
+</head>
+<body>
+    <div class="todo-container">
+        <h1>Your Todos</h1>
+        <form id="newtodo">
+            <input name="content" placeholder="Enter a todo">
+            <button type="submit">Add Todo</button>
+        </form>
+        <% if(todos.length) { %>
+            <% for(let todo of todos) { %>
+                <div class="todo" data-content="<%= todo.content %>" data-id="<%= todo._id %>">
+                <div class="content"><a onclick="toggleCompleted(this)" class="<%= todo.complete ? 'completed': 'incomplete' %>"><%= todo.content %></a></div>
+                <div class="controls">
+                    <i onclick="deleteTodo(this)" class="fa fa-trash-o" aria-hidden="true"></i>
+                </div>
+            </div>
+            <% } %>
+        <% } else { %>
+            <h1 id="no-todos">No todos yet...</h1>
+        <% } %>
+    </div>
+</body>
+
+
+<script>
+  
+
+    $('form').submit(function(e) {
+        e.preventDefault();
+        $('#no-todos').remove();
+        
+        $.post('/api/todos', {
+            content: $("input[name='content']").val()
+        },function(data) {
+            $(`
+                <div class="todo" data-id="${data._id}">
+                <div class="content"><a class="incomplete" onclick="toggleCompleted(this)">${data.content}</a></div>
+                <div class="controls">
+                    <i onclick="deleteTodo(this)" class="fa fa-trash-o" aria-hidden="true"></i>
+                </div>
+            </div>
+        `).hide().appendTo('.todo-container').fadeIn(300);
+        });
+    });
+    
+    function toggleCompleted(e) {
+        
+        if($(e).hasClass('incomplete')) {
+            $(e).removeClass('incomplete').addClass('completed');
+        } else {
+            $(e).removeClass('completed').addClass('incomplete');
+        }
+        $.post('/api/todos/update/' + $(e).parent().parent().attr('data-id'), {
+            complete: $(e).hasClass('completed')
+        },function(data) {
+            console.log(data);
+        }).catch(err => {
+            console.log(err);
+        }) 
+    }
+    
+    function deleteTodo(e) {
+        $(e).parent().parent().fadeOut(300, function() {
+            $.post('/api/todos/delete/' + $(e).parent().parent().attr('data-id'), function() {
+                if($('.todo').length == 0) {
+                    $('.todo-container').append(`<h1 id="no-todos">No todos yet...</h1>`);
+                }
+            });
+            
+        });
+        
+    }
+    
+    
+</script>
